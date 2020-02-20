@@ -25,10 +25,10 @@ class Net_10(nn.Module):
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
-        self.fc1 = nn.Linear(128, 128)
-        self.fc2 = nn.Linear(128, 96)
-        self.fc3 = nn.Linear(96, 64)
-        self.fc4 = nn.Linear(64, 32)
+        self.fc1 = nn.Sequential(nn.Linear(128, 128), nn.ReLU(inplace=True))
+        self.fc2 = nn.Sequential(nn.Linear(128, 96), nn.ReLU(inplace=True))
+        self.fc3 = nn.Sequential(nn.Linear(96, 64), nn.ReLU(inplace=True))
+        self.fc4 = nn.Sequential(nn.Linear(64, 32), nn.ReLU(inplace=True))
         self.fc5 = nn.Linear(32, 10)
 
     def forward(self, x):
@@ -41,12 +41,38 @@ class Net_10(nn.Module):
         x = self.avgpool(x)
 
         x = x.view(x.size(0), -1)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = F.relu(self.fc4(x))
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
+        x = self.fc4(x)
         x = self.fc5(x)
         return x
+
+    def forward_A(self, x, layers_n):
+        layers = [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5,
+                    self.fc1, self.fc2, self.fc3, self.fc4, self.fc5]
+        for i in range(layers_n):
+            if i==5:
+                x = self.avgpool(x)
+                x = x.view(x.size(0), -1)
+            x = layers[i](x)
+        # print('A: {}'.format(i))
+        return x
+
+    def forward_B(self, x, layers_id):
+        layers = [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5,
+                    self.fc1, self.fc2, self.fc3, self.fc4, self.fc5]
+        while(layers_id and layers_id<10):
+            # print('B: {}'.format(layers_id))
+            if layers_id==5:
+                x = self.avgpool(x)
+                x = x.view(x.size(0), -1)
+            x = layers[layers_id](x)
+            layers_id += 1
+        return x
+    
+
+
 
 class Net_5(nn.Module):
     def __init__(self):

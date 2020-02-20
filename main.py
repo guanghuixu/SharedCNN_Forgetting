@@ -93,7 +93,7 @@ with torch.no_grad():
         correct += (predicted == labels.to(device)).sum().item()
 
 print('Accuracy of the network on the 10000 test images: %d %%' % (
-    100 * correct / total))
+    100.0 * correct / total))
 
 
 class_correct = list(0. for i in range(10))
