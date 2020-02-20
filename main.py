@@ -6,18 +6,26 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from models.resnet import cifar_resnet20
+from models.ConvFc import Net_5, Net_10
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:6" if torch.cuda.is_available() else "cpu")
 print(device)
-epochs = 100
-batch_size = 128
+epochs = 200
+batch_size = 256
 p_frenquent = 50
+model_name = 'B'
 
-
-
-transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+## dataloader
+transform = transforms.Compose([
+    transforms.RandomCrop(size=32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.4914, 0.4822, 0.4465], # mean=[0.5071, 0.4865, 0.4409] for cifar100
+        std=[0.2023, 0.1994, 0.2010],  # std=[0.2009, 0.1984, 0.2023] for cifar100
+    ),
+])
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
@@ -29,35 +37,16 @@ testset = torchvision.datasets.CIFAR10(root='./data', train=False,
 testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                          shuffle=False, num_workers=2)
 
-classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-dataiter = iter(trainloader)
+classes = ('plane', 'car', 'bird', 'cat', 'deer', 
+            'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-net = Net().to(device=device)
+# net = Net_5().to(device=device)
+net = Net_10().to(device=device)
+# net = cifar_resnet20().to(device)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
+optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, dampening=0, weight_decay=1e-4, nesterov=True)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200,eta_min=0.001)
 # train
 for epoch in range(epochs):  # loop over the dataset multiple times
 
@@ -74,6 +63,7 @@ for epoch in range(epochs):  # loop over the dataset multiple times
         loss = criterion(outputs, labels.to(device))
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         # print statistics
         running_loss += loss.item()
@@ -85,11 +75,10 @@ for epoch in range(epochs):  # loop over the dataset multiple times
 print('Finished Training')
 
 
-PATH = './cifar_net.pth'
+PATH = './cifar_net_{}.pth'.format(model_name)
 torch.save(net.state_dict(), PATH)
 
 # test
-dataiter = iter(testloader)
 # net = Net().to(device=device)
 # net.load_state_dict(torch.load(PATH))
 
