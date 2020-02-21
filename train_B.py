@@ -12,6 +12,7 @@ import argparse
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 p_frenquent = 500
+test_n = 5
 model_name = 'B'
 
 parser = argparse.ArgumentParser()
@@ -47,7 +48,8 @@ parameters_list = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5',
                     'fc1', 'fc2', 'fc3', 'fc4', 'fc5']
 
 A = Net_10().to(device)
-A_dict = torch.load('./checkpoints/cifar_net_A.pth', map_location={'cuda:6':'cuda'})
+# A_dict = torch.load('./checkpoints/cifar_net_A.pth', map_location={'cuda:6':'cuda'})
+A_dict = torch.load('./checkpoints/cifar_net_A.pth')
 A.load_state_dict(A_dict)
 
 B = Net_10().to(device=device)
@@ -64,7 +66,7 @@ print(B.conv1.conv.weight[0, 0, :10])
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(B.parameters(), lr=0.1, momentum=0.9, dampening=0, weight_decay=1e-4, nesterov=True)
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200,eta_min=0.001)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs,eta_min=0.001)
 
 def test(A, B, testloader, share_n):
     correct = 0
@@ -106,6 +108,12 @@ for epoch in range(args.epochs):  # loop over the dataset multiple times
     print(p_str)
     with open('./logs/B{}_log.txt'.format(args.share_n), 'a+') as f:
         f.writelines(p_str + '\n')
+    if epoch % test_n == 0:
+        new_acc = test(B, B, testloader, args.share_n)
+        p_str = 'Share_n: {} | Epoch: {}/{} | B_acc: {}%'.format(args.share_n, epoch, args.epochs, new_acc)
+        print(p_str)
+        with open('./logs/B{}_log.txt'.format(args.share_n), 'a+') as f:
+            f.writelines(p_str + '\n')
 
 # test: the final acc of B
 B.eval()
@@ -115,6 +123,6 @@ print(p_str)
 with open('./logs/B{}_log.txt'.format(args.share_n), 'a+') as f:
     f.writelines(p_str + '\n')
 
-PATH = './checkpoints/cifar_net_B{}.pth'.format(model_name, args.share_n)
+PATH = './checkpoints/cifar_net_B{}.pth'.format(args.share_n)
 torch.save(B.state_dict(), PATH)
 print('Finished Training && Save {}'.format(PATH))

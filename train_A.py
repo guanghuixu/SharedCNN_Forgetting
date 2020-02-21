@@ -9,12 +9,14 @@ import torch.optim as optim
 from models.resnet import cifar_resnet20
 from models.ConvFc import Net_5, Net_10
 
-device = torch.device("cuda:6" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 epochs = 200
 batch_size = 256
 p_frenquent = 50
-model_name = 'B'
+model_name = 'A'
+test_n = 1
+best_acc = -1000
 
 ## dataloader
 transform = transforms.Compose([
@@ -47,9 +49,23 @@ net = Net_10().to(device=device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, dampening=0, weight_decay=1e-4, nesterov=True)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200,eta_min=0.001)
+
+def test(net, testloader):
+    net.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data in testloader:
+            images, labels = data
+            outputs = net(images.to(device))
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels.to(device)).sum().item()
+    return 100.0 * correct / total
+
 # train
 for epoch in range(epochs):  # loop over the dataset multiple times
-
+    net.train()
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         # get the inputs; data is a list of [inputs, labels]
@@ -72,29 +88,18 @@ for epoch in range(epochs):  # loop over the dataset multiple times
                   (epoch + 1, i + 1, running_loss / p_frenquent))
             running_loss = 0.0
 
+    if epoch % test_n == 0 or epoch == epochs - 1:
+        final_acc = test(net, testloader)
+        if final_acc > best_acc:
+            best_acc = final_acc
+            best_epoch = epoch
+            best_dict = net.state_dict()
+        print('Epoch: {} | Acc: {}% | best_epoch: {} | best_acc: {}%'.format(
+            epoch, final_acc, best_epoch, best_acc))
 print('Finished Training')
 
-
-PATH = './cifar_net_{}.pth'.format(model_name)
-torch.save(net.state_dict(), PATH)
-
-# test
-# net = Net().to(device=device)
-# net.load_state_dict(torch.load(PATH))
-
-correct = 0
-total = 0
-with torch.no_grad():
-    for data in testloader:
-        images, labels = data
-        outputs = net(images.to(device))
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels.to(device)).sum().item()
-
-print('Accuracy of the network on the 10000 test images: %d %%' % (
-    100.0 * correct / total))
-
+PATH = './checkpoints/cifar_net_{}.pth'.format(model_name)
+torch.save(best_dict, PATH)
 
 class_correct = list(0. for i in range(10))
 class_total = list(0. for i in range(10))
