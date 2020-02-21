@@ -3,3 +3,4 @@ data
 .idea
 .vscode
 models/__pycache__
+checkpoints
