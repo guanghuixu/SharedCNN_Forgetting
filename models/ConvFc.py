@@ -48,7 +48,7 @@ class Net_10(nn.Module):
         x = self.fc5(x)
         return x
 
-    def forward_B(self, x, layers_n):
+    def forward_A(self, x, layers_n):
         layers = [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5,
                     self.fc1, self.fc2, self.fc3, self.fc4, self.fc5]
         for i in range(layers_n):
@@ -56,14 +56,14 @@ class Net_10(nn.Module):
                 x = self.avgpool(x)
                 x = x.view(x.size(0), -1)
             x = layers[i](x)
-        # print('B: {}'.format(i))
+        # print('A: {}'.format(i))
         return x
 
-    def forward_A(self, x, layers_id):
+    def forward_B(self, x, layers_id):
         layers = [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5,
                     self.fc1, self.fc2, self.fc3, self.fc4, self.fc5]
         while(layers_id and layers_id<10):
-            # print('A: {}'.format(layers_id))
+            # print('B: {}'.format(layers_id))
             if layers_id==5:
                 x = self.avgpool(x)
                 x = x.view(x.size(0), -1)
@@ -71,6 +71,8 @@ class Net_10(nn.Module):
             layers_id += 1
         return x
     
+
+
 
 class Net_5(nn.Module):
     def __init__(self):

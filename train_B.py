@@ -53,11 +53,11 @@ A.load_state_dict(A_dict)
 B = Net_10().to(device=device)
 print(B.conv1.conv.weight[0, 0, :10])
 B_dict = B.state_dict()
-map_parameters_list = parameters_list[:args.share_n]
+map_parameters_list = parameters_list[-args.share_n:]
 for key in B_dict.keys():
     key_ = key.split('.')[0]
     if key_ in map_parameters_list:
-        B_dict[key] = A_dict[key]    # initialize B with A shared layers
+        B_dict[key] = A_dict[key]    # initialize B with A shared layers, the first 10-share_n layer
         print(key)
 B.load_state_dict(B_dict)
 print(B.conv1.conv.weight[0, 0, :10])
@@ -72,8 +72,8 @@ def test(A, B, testloader, share_n):
     with torch.no_grad():
         for data in testloader:
             images, labels = data
-            outputs = B.forward_B(images.to(device), 10 - share_n)
-            outputs = A.forward_A(outputs, 10 - share_n)
+            outputs = A.forward_A(images.to(device), 10 - share_n)
+            outputs = B.forward_B(outputs, 10 - share_n)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels.to(device)).sum().item()
@@ -116,5 +116,5 @@ with open('./logs/B{}_log.txt'.format(args.share_n), 'a+') as f:
     f.writelines(p_str + '\n')
 
 PATH = './checkpoints/cifar_net_B{}.pth'.format(model_name, args.share_n)
-torch.save(net.state_dict(), PATH)
+torch.save(B.state_dict(), PATH)
 print('Finished Training && Save {}'.format(PATH))
