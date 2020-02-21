@@ -4,3 +4,4 @@ data
 .vscode
 models/__pycache__
 checkpoints
+logs/*

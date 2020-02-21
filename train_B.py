@@ -102,7 +102,18 @@ for epoch in range(args.epochs):  # loop over the dataset multiple times
             running_loss = 0.0
     B.eval()
     new_acc = test(A, B, testloader, args.share_n)
-    print('Share_n: {} | Epoch: {}/{} | new_acc: {}%'.format(args.share_n, epoch, args.epochs, new_acc))
+    p_str = 'Share_n: {} | Epoch: {}/{} | new_acc: {}%'.format(args.share_n, epoch, args.epochs, new_acc)
+    print(p_str)
+    with open('./logs/B{}_log.txt'.format(args.share_n), 'a+') as f:
+        f.writelines(p_str + '\n')
+
+# test: the final acc of B
+B.eval()
+new_acc = test(B, B, testloader, args.share_n)
+p_str = 'Share_n: {} | Epoch: {}/{} | B_acc: {}%'.format(args.share_n, epoch, args.epochs, new_acc)
+print(p_str)
+with open('./logs/B{}_log.txt'.format(args.share_n), 'a+') as f:
+    f.writelines(p_str + '\n')
 
 PATH = './checkpoints/cifar_net_B{}.pth'.format(model_name, args.share_n)
 torch.save(net.state_dict(), PATH)
