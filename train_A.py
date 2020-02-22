@@ -94,8 +94,11 @@ for epoch in range(epochs):  # loop over the dataset multiple times
             best_acc = final_acc
             best_epoch = epoch
             best_dict = net.state_dict()
-        print('Epoch: {} | Acc: {}% | best_epoch: {} | best_acc: {}%'.format(
-            epoch, final_acc, best_epoch, best_acc))
+        p_str = 'Epoch: {} | Acc: {}% | best_epoch: {} | best_acc: {}%'.format(
+            epoch, final_acc, best_epoch, best_acc)
+        with open('./logs/A_log.txt', 'a+') as f:
+            f.writelines(p_str + '\n')
+        print(p_str)
 print('Finished Training')
 
 PATH = './checkpoints/cifar_net_{}.pth'.format(model_name)
@@ -118,7 +121,9 @@ with torch.no_grad():
 
 
 for i in range(10):
-    print('Accuracy of %5s : %2d %%' % (
-        classes[i], 100 * class_correct[i] / class_total[i]))
+    p_str = 'Accuracy of {} : {}%'.format(classes[i], 100.0 * class_correct[i] / class_total[i])
+    with open('./logs/A_log.txt', 'a+') as f:
+        f.writelines(p_str + '\n')
+    print(p_str)
 
 

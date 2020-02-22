@@ -115,10 +115,12 @@ for epoch in range(args.epochs):  # loop over the dataset multiple times
         with open('./logs/B{}_log.txt'.format(args.share_n), 'a+') as f:
             f.writelines(p_str + '\n')
 
-# test: the final acc of B
+# test: the final acc
+A.eval()
 B.eval()
-new_acc = test(B, B, testloader, args.share_n)
-p_str = 'Share_n: {} | Epoch: {}/{} | B_acc: {}%'.format(args.share_n, epoch, args.epochs, new_acc)
+A_acc = test(A, A, testloader, args.share_n)
+B_acc = test(B, B, testloader, args.share_n)
+p_str = 'Share_n: {} | Epoch: {}/{} | A_acc: {}% | B_acc: {}%'.format(args.share_n, epoch, args.epochs, A_acc, B_acc)
 print(p_str)
 with open('./logs/B{}_log.txt'.format(args.share_n), 'a+') as f:
     f.writelines(p_str + '\n')
